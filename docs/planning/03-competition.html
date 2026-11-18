@@ -1,0 +1,529 @@
+<title>나무위키 피드 경쟁 지도</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: a single reading column of research sections; data tables scroll inside their own frames; opportunities are written as wiki-style diff lines (− now / + namutok). */
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --ink:#17202A; --muted:#58636F; --line:#DAE0E6; --chip:#ECF0F4;
+  --accent:#2B47C9;
+  --add-bg:#E2F5EA; --add-fg:#0F6639; --del-bg:#FBE7E9; --del-fg:#9E1F2E; --warn-bg:#FFF2D4; --warn-fg:#6F4B00;
+  --f-display:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F141A; --surface:#161D25; --ink:#E5EAEF; --muted:#9BA6B1; --line:#2A333D; --chip:#1F2731;
+  --accent:#93A6FF;
+  --add-bg:#12301F; --add-fg:#86DBA9; --del-bg:#3A1A20; --del-fg:#F3A2AC; --warn-bg:#382C10; --warn-fg:#F0C76C;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --surface:#161D25; --ink:#E5EAEF; --muted:#9BA6B1; --line:#2A333D; --chip:#1F2731;
+  --accent:#93A6FF;
+  --add-bg:#12301F; --add-fg:#86DBA9; --del-bg:#3A1A20; --del-fg:#F3A2AC; --warn-bg:#382C10; --warn-fg:#F0C76C;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:32px 64px}
+main{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:clamp(1.75rem,4.2vw,2.6rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.45rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0;max-width:68ch}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sec{display:flex;flex-direction:column;gap:18px}
+.sec-head{display:flex;flex-direction:column;gap:6px}
+.lede{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.small{font-size:.84rem;color:var(--muted)}
+
+/* header */
+header{display:flex;flex-direction:column;gap:20px}
+.verdict{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:start}
+.verdict .flag{grid-row:span 2;font-family:var(--f-mono);font-size:.8rem;background:var(--add-bg);color:var(--add-fg);padding:4px 10px;border-radius:999px;white-space:nowrap;align-self:center}
+.verdict strong{font-family:var(--f-display);font-size:1.15rem}
+@media (max-width:560px){.verdict{grid-template-columns:1fr}.verdict .flag{grid-row:auto;justify-self:start}}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stat{border-top:2px solid var(--ink);padding-top:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .n{font-family:var(--f-display);font-weight:700;font-size:1.9rem;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat .l{font-size:.86rem}
+.stat .s{font-size:.75rem;color:var(--muted)}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* chips & pills */
+.chip{display:inline-block;font-family:var(--f-mono);font-size:.72rem;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap;vertical-align:1px}
+.p-hi{background:var(--del-bg);color:var(--del-fg)}
+.p-mid{background:var(--warn-bg);color:var(--warn-fg)}
+.p-lo{background:var(--add-bg);color:var(--add-fg)}
+.tag{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);white-space:nowrap}
+
+/* layers */
+.layers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.layer{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.layer ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.layer .why{font-size:.86rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;margin-top:auto}
+.layers2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:820px){.layers,.layers2{grid-template-columns:1fr}}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.86rem;line-height:1.55}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-display);font-weight:600;font-size:.8rem;color:var(--muted);background:var(--chip);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.wide{min-width:980px}
+.mid{min-width:680px}
+td b{font-weight:700}
+
+/* profiles */
+.profiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.prof{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.prof-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;justify-content:space-between}
+.prof dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;font-size:.88rem}
+.prof dt{color:var(--muted);font-size:.8rem;padding-top:1px}
+.prof dd{margin:0;min-width:0}
+.prof .opp{font-size:.88rem;background:var(--add-bg);color:var(--add-fg);border-radius:6px;padding:8px 10px}
+@media (max-width:820px){.profiles{grid-template-columns:1fr}}
+
+/* diff */
+.diff{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.88rem}
+.hunk{border-bottom:1px solid var(--line)}
+.hunk:last-child{border-bottom:0}
+.hunk-h{font-family:var(--f-mono);font-size:.76rem;color:var(--muted);background:var(--chip);padding:6px 12px}
+.ln{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:6px 12px}
+.ln .sg{font-family:var(--f-mono);font-weight:500;text-align:center}
+.ln.del{background:var(--del-bg);color:var(--del-fg)}
+.ln.add{background:var(--add-bg);color:var(--add-fg)}
+.ln span:last-child{min-width:0}
+
+/* timeline */
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-left:2px solid var(--line);margin-left:6px}
+.tl li{position:relative;padding:0 0 14px 20px;font-size:.9rem}
+.tl li::before{content:"";position:absolute;left:-7px;top:.55em;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--muted)}
+.tl li.hot::before{border-color:var(--del-fg);background:var(--del-bg)}
+.tl .d{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);display:block}
+
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+
+.position{font-family:var(--f-display);font-size:1.15rem;font-weight:600;line-height:1.55;border-left:3px solid var(--accent);padding-left:14px;max-width:62ch}
+
+.risks{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:10px;font-size:.92rem}
+.risks b{font-family:var(--f-display)}
+
+.src{columns:2;column-gap:28px;font-size:.84rem;padding-left:1.1em;margin:0}
+.src li{break-inside:avoid;margin-bottom:4px}
+@media (max-width:640px){.src{columns:1}}
+footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<main>
+
+<header>
+  <span class="eyebrow">namutok · 3단계 경쟁·시장 조사 · 2026-11-18 기준</span>
+  <h1>나무위키를 세로로 넘겨 보는 피드는 아직 아무도 만들지 않았다</h1>
+  <p class="lede">namutok은 나무위키에서 "지금 편집되고 있는 문서"를 카드로 넘겨 보는 무료 웹앱(PWA)이다. 이 페이지는 앱스토어, GitHub, 확장 스토어, 커뮤니티, 소셜, 상표 DB를 훑은 조사 결과를 한 장에 모은 것이다.</p>
+  <div class="verdict">
+    <span class="flag">판정: 직접 경쟁 없음</span>
+    <strong>나무위키 문서를 스와이프 카드로 보여 주는 제품은 0개다.</strong>
+    <p class="small">신뢰도: 앱·웹·확장·봇 기준 <span class="chip p-lo">상</span>, 사람이 운영하는 소셜 계정까지 넣으면 <span class="chip p-mid">중</span>. 가장 가까운 것은 최근 변경 목록을 텍스트로 보여 주는 <a href="https://www.raycast.com/123period/namuwiki">Raycast 확장</a>(설치 149)이다.</p>
+  </div>
+  <div class="stats" aria-label="핵심 수치">
+    <div class="stat"><span class="n">0</span><span class="l">나무위키 스와이프 피드 제품</span><span class="s">스토어·GitHub·확장·봇 스윕</span></div>
+    <div class="stat"><span class="n">149</span><span class="l">가장 가까운 선례의 설치 수</span><span class="s">Raycast "Namuwiki", 텍스트 목록</span></div>
+    <div class="stat"><span class="n">3.1억</span><span class="l">나무위키 월 방문 (2026-10)</span><span class="s">Similarweb 314.5M · Semrush 309.73M</span></div>
+    <div class="stat"><span class="n">2개</span><span class="l">1,000스타를 넘긴 해외 위키 피드</span><span class="s">WikiTok 1,321 · Xikipedia 1,147</span></div>
+  </div>
+</header>
+
+<section class="sec" aria-labelledby="s-layers">
+  <div class="sec-head">
+    <span class="eyebrow">간접 경쟁</span>
+    <h2 id="s-layers">경쟁은 세 겹으로 둘러싸고 있다</h2>
+    <p class="lede">같은 사용자층(나무위키 헤비 유저)을 노리지만 아무도 "편집 중인 문서를 넘겨 보는" 경험을 주지 않는다.</p>
+  </div>
+  <div class="layers">
+    <div class="layer">
+      <h3>뷰어 앱</h3>
+      <ul>
+        <li>공식앱: Android <b>1.7★</b>(리뷰 516, 설치 추정 14만), iOS KR 1.89★</li>
+        <li>나무뷰어(iOS): 4.08★(365), 무광고·무수집</li>
+        <li>나무뷰어-리팩(Android): 4.2★, 설치 추정 5만</li>
+      </ul>
+      <p class="why">경쟁 축은 "웹을 더 편하게"다. 발견 기능은 랜덤 버튼 하나뿐이다.</p>
+    </div>
+    <div class="layer">
+      <h3>실검 "왜 떴나" 해설</h3>
+      <ul>
+        <li>아카라이브 실검 채널: 구독 <b>30,053</b></li>
+        <li>YouTube @나무위키실검: 최고 조회 544,006회</li>
+        <li>크롬 확장 "나무위키 실검, 왜 떴지?": 147명</li>
+      </ul>
+      <p class="why">피드에 가장 가까운 수요다. 하지만 커뮤니티 방문이나 PC 확장이 필요해 모바일 마찰이 크다.</p>
+    </div>
+    <div class="layer">
+      <h3>놀이형 2차 제품</h3>
+      <ul>
+        <li>링크 레이싱: 나무위키런, 링키런, 나무타기, 스피드런 확장</li>
+        <li>장르 합계 1,000명 미만</li>
+        <li>표준 패턴: 오늘의 문제 + 순위 + 도전장 링크</li>
+      </ul>
+      <p class="why">2026년의 유행은 피드가 아니라 능동적인 링크 타기 게임이었다.</p>
+    </div>
+  </div>
+  <div class="layers layers2">
+    <div class="layer">
+      <h3>해외 위키 피드 (WikiTok류)</h3>
+      <ul>
+        <li>2021년 이후 수십 번 복제됐다. GitHub "wikitok" 검색만 51개 저장소</li>
+        <li>WikiTok: HN 1,459점, 약 50만 명 상호작용(창작자 추정), 2025-03 이후 커밋 없음</li>
+        <li>한국어로 현지화된 위키 스와이프 앱은 있지만 <b>KR 평가는 전부 0건</b></li>
+      </ul>
+      <p class="why">모두 위키백과 랜덤·추천·AI 요약이 소스다. 편집 활동을 소스로 쓴 제품은 하나도 없다.</p>
+    </div>
+    <div class="layer">
+      <h3>대체재</h3>
+      <ul>
+        <li>쇼츠·릴스: 숏폼 이용 90% 이상, 일평균 42분 (<a href="https://cdn.cjmezzomedia.com/attach-file/insight-m/01_MezzoMedia_2026_Digital_Lifestyle_Report_Shortform_20260528134817.pdf">메조미디어 2026</a>)</li>
+        <li>네이버 지식백과 모바일 홈: 이미 카드형 세로 스크롤 ("지금 떠오르는 주제")</li>
+        <li>위키백과 앱 Home: 개인화 피드, 2026-06 Android 50% 배포</li>
+      </ul>
+      <p class="why">시간 때우기와 "짧은 지식 카드" 수요를 이미 가져가고 있다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="s-table">
+  <div class="sec-head">
+    <span class="eyebrow">비교표</span>
+    <h2 id="s-table">14개 서비스 중 namutok의 핵심 기능을 지원하는 곳은 없다</h2>
+    <p class="lede">핵심 기능 = 나무위키의 편집 중 문서를 스와이프 카드로 보여 주기. 수치는 따로 적지 않으면 2026-11-18 조회값이다.</p>
+  </div>
+  <div class="tbl" tabindex="0" aria-label="경쟁 비교표, 가로로 스크롤">
+    <table class="wide">
+      <thead><tr><th>서비스</th><th>유형</th><th>핵심 기능 지원</th><th>가격</th><th>지표</th><th>주요 불만</th></tr></thead>
+      <tbody>
+        <tr><td><b>나무위키 공식앱</b> (umanle)</td><td>간접</td><td>없음. 홈 "연관 문서"는 가로 캐러셀</td><td>무료, 광고</td><td class="num"><a href="https://play.google.com/store/apps/details?id=net.umanle.namuwiki&amp;hl=ko&amp;gl=KR">Android 1.7★ · 516</a><br><a href="https://itunes.apple.com/lookup?id=1623510780&amp;country=kr">iOS KR 1.89★ · 144</a></td><td>뒤로가기 제거, 실검 썸네일 강제, 401·보안 확인 장애</td></tr>
+        <tr><td><b>나무뷰어</b> (iOS)</td><td>간접</td><td>없음</td><td>무료, 무광고</td><td class="num"><a href="https://itunes.apple.com/lookup?id=993035669&amp;country=kr">4.08★ · 365</a></td><td>광고 차단 무력화, 보안 확인 무한 새로고침</td></tr>
+        <tr><td><b>나무뷰어-리팩</b> (Android)</td><td>간접</td><td>없음</td><td>무료, 끌 수 있는 배너</td><td class="num"><a href="https://play.google.com/store/apps/details?id=com.monpub.namuwiki.repack&amp;hl=ko&amp;gl=KR">4.2★ · 304 · 5만+</a></td><td>실검 미표시, Cloudflare 차단, 사이트 변경마다 고장</td></tr>
+        <tr><td><b>Raycast "Namuwiki"</b></td><td>간접 (같은 소스)</td><td><span class="chip p-mid">부분</span> 같은 sidebar.json, 텍스트 목록뿐</td><td>무료, MIT</td><td class="num"><a href="https://www.raycast.com/123period/namuwiki">설치 149</a></td><td>실검 명령 고장 (DNS 소멸)</td></tr>
+        <tr><td><b>아카라이브 실검 채널</b></td><td>간접 (맥락)</td><td>없음. 키워드 해설만</td><td>무료</td><td class="num"><a href="https://namu.wiki/w/%EB%82%98%EB%AC%B4%EC%9C%84%ED%82%A4%20%EC%8B%A4%EA%B2%80%20%EC%95%8C%EB%A0%A4%EC%A3%BC%EB%8A%94%20%EC%B1%84%EB%84%90">구독 30,053</a></td><td>"투기장" 비판, 운영진 갈등</td></tr>
+        <tr><td><b>YouTube @나무위키실검</b></td><td>대체재 (영상)</td><td>없음</td><td>무료</td><td class="num"><a href="https://www.youtube.com/@%EB%82%98%EB%AC%B4%EC%9C%84%ED%82%A4%EC%8B%A4%EA%B2%80/shorts">구독 734 · 최고 544,006회</a></td><td>업로드 불규칙</td></tr>
+        <tr><td><b>"나무위키 실검, 왜 떴지?"</b></td><td>간접</td><td>없음</td><td>무료</td><td class="num"><a href="https://chromewebstore.google.com/detail/lkeohnkcjiniaeahjneenijngejohhnb">147명 · 5.0★</a></td><td>PC 크롬 전용</td></tr>
+        <tr><td><b>링크 레이싱 게임</b></td><td>간접 (보완재)</td><td>없음. 능동 놀이</td><td>무료</td><td class="num">합계 1,000명 미만</td><td>"너무 어렵다", 앱은 1~2개월 뒤 방치</td></tr>
+        <tr><td><b>WikiTok</b></td><td>간접 (해외 원형)</td><td>없음. 위키백과 랜덤</td><td>무료, 후원 링크</td><td class="num"><a href="https://github.com/IsaacGemal/wikitok">★1,321 · HN 1,459</a></td><td>랜덤 품질, NSFW, 개인화 없음</td></tr>
+        <tr><td><b>Xikipedia</b></td><td>간접 (해외)</td><td>없음. 덤프 2026-02 정지</td><td>무료</td><td class="num"><a href="https://github.com/rebane2001/xikipedia">★1,147 · HN 441</a></td><td>36MB 선다운로드, iOS 크래시</td></tr>
+        <tr><td><b>WanderWiki</b> (iOS)</td><td>간접 (해외)</td><td>없음. 한국어 위키백과 지원</td><td>하루 20문서, 월 $1.99</td><td class="num"><a href="https://lagerland.app/apps/wanderwiki/">2026-02 출시</a></td><td>확인 못 함</td></tr>
+        <tr><td><b>기타 WikiTok 클론</b></td><td>간접 (해외)</td><td>없음</td><td>대부분 무료</td><td class="num">KR 평가 0건</td><td>"irrelevant and uninteresting"</td></tr>
+        <tr><td><b>네이버 지식백과 모바일 홈</b></td><td>대체재</td><td>없음. 제휴 백과 소스</td><td>무료</td><td class="num"><a href="https://m.terms.naver.com/">확인 못 함</a></td><td>확인 못 함</td></tr>
+        <tr><td><b>쇼츠 · 릴스</b></td><td>대체재 (행동)</td><td>없음</td><td>무료, 광고</td><td class="num">일평균 42분</td><td>중독성 87.1%, 글 이해 어려움 37.5%</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="s-prof">
+  <div class="sec-head">
+    <span class="eyebrow">경쟁사 프로필</span>
+    <h2 id="s-prof">가까운 8곳, 그리고 각자가 남긴 빈틈</h2>
+  </div>
+  <div class="profiles">
+    <article class="prof">
+      <div class="prof-h"><h3>나무위키 공식앱</h3><span class="chip">umanle · 무료·광고</span></div>
+      <dl>
+        <dt>현황</dt><dd>2026-08-23 v1.2.0에서 뒤로가기 자리에 랜덤 버튼이 들어갔다. 이후 iOS 리뷰 69건 중 60건이 1점이다.</dd>
+        <dt>불만</dt><dd>"랜덤문서 쓰는 놈이 얼마나 있다고 뒤로가기 자리에…". 실검 썸네일을 끌 수 없다. 개발자 답변은 최근 150건 중 0건이다.</dd>
+      </dl>
+      <p class="opp">+ 랜덤은 별도 탭으로, 피드 위치를 지키는 뒤로가기, 이미지 흐림·끄기 토글을 출시 조건으로 둔다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>나무뷰어 (iOS)</h3><span class="chip">개인 · 무광고·무수집</span></div>
+      <dl>
+        <dt>현황</dt><dd>1.1MB 경량 웹뷰. 2026-06 원격 "데이터 업데이트"로 앱 배포 없이 사이트 변경에 대응한다. v3.0 2026-09-15.</dd>
+        <dt>불만</dt><dd>광고 차단이 무력화됐고(2024~), 2026-10~11 보안 확인 무한 새로고침이 생겼다.</dd>
+      </dl>
+      <p class="opp">+ 원격 설정으로 파서를 바꾸는 패턴을 데이터 소스 폴백에 쓴다. 광고는 건드리지 않는다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>나무뷰어-리팩 (Android)</h3><span class="chip">개인 · 끌 수 있는 배너</span></div>
+      <dl>
+        <dt>현황</dt><dd>최근 리뷰 150건 중 99건에 답했다. 2026년에만 1월(목차), 5월(WebView), 10월(실검)에 깨졌다.</dd>
+        <dt>수요</dt><dd>사용자가 "실검챈 스크립트" 기능을 요청했다. 실검과 "왜 떴나"를 한 화면에 묶어 달라는 뜻이다.</dd>
+      </dl>
+      <p class="opp">+ 본문 HTML 대신 og 태그만 파싱한다. "나중에 보기"로 피드와 링크 타기를 잇는다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>Raycast "Namuwiki"</h3><span class="chip">개인 · MIT</span></div>
+      <dl>
+        <dt>현황</dt><dd>sidebar.json을 나무위키 밖에서 보여 주는 유일한 선례. 2025-02-26 이후 손대지 않았다.</dd>
+        <dt>약점</dt><dd>macOS 런처 안의 텍스트 목록이다. 실검 명령은 2026-10-04 API 폐기로 고장 났다.</dd>
+      </dl>
+      <p class="opp">+ 같은 소스가 하루아침에 죽을 수 있다는 증거다. 소스별 헬스체크와 폴백을 넣는다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>실검 "왜 떴나" 생태계</h3><span class="chip">커뮤니티 · 무료</span></div>
+      <dl>
+        <dt>규모</dt><dd>아카라이브 구독 30,053, 쇼츠 최고 544,006회. 반면 랜덤 문서 낭독 채널은 구독 12명이다.</dd>
+        <dt>마찰</dt><dd>채널까지 가야 하고, 모바일 스크립트는 특수 브라우저가 필요하고, 확장은 PC 크롬 전용이다.</dd>
+      </dl>
+      <p class="opp">+ 모바일 카드 안에서 "왜 편집되는지" 링크를 한 번에 준다. 댓글은 두지 않는다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>링크 레이싱 게임</h3><span class="chip">개인 · 무료</span></div>
+      <dl>
+        <dt>규모</dt><dd>나무위키런 설치 추정 352, 링키런 214, 스피드런 확장 321명. 앱 2종은 2026-04·05 이후 업데이트가 멈췄다.</dd>
+        <dt>성격</dt><dd>링크 타기 습관을 능동 놀이로 바꾼 장르다. 수동 피드와 정반대라 보완재다.</dd>
+      </dl>
+      <p class="opp">+ "오늘 가장 많이 편집된 10개"와 공유 카드에 일일 문제·순위 패턴을 가져온다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>WikiTok</h3><span class="chip">Isaac Gemal · 무료</span></div>
+      <dl>
+        <dt>현황</dt><dd>X → HN → 언론 → Reddit 순으로 퍼졌다. 3주 만에 측정과 유지보수를 멈췄다. 가장 많은 요청은 "알고리즘을 넣어 달라"였다.</dd>
+        <dt>약점</dt><dd>알고리즘 없는 랜덤이라 품질 불만이 구조적으로 안 풀린다. 나무위키는 없다.</dd>
+      </dl>
+      <p class="opp">+ "사람들이 지금 고치는 문서"가 기본 화제성 필터가 된다. 20개 묶음, 썸네일 필수, 로컬 좋아요는 따라 한다.</p>
+    </article>
+    <article class="prof">
+      <div class="prof-h"><h3>Xikipedia</h3><span class="chip">개인 · AGPL-3.0</span></div>
+      <dl>
+        <dt>현황</dt><dd>비ML 로컬 점수 추천(40% 가중 랜덤, 42% 최고점, 18% 완전 랜덤). 덤프는 2026-02-06 이후 갱신이 없다.</dd>
+        <dt>약점</dt><dd>첫 로딩 36MB, iOS 크래시, NSFW 필터 PR 미병합.</dd>
+      </dl>
+      <p class="opp">+ "몇 분 전 편집"으로 신선도에서 정반대 축을 잡는다. 코드는 AGPL이라 아이디어만 가져온다.</p>
+    </article>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="s-gap">
+  <div class="sec-head">
+    <span class="eyebrow">경쟁사가 비워둔 기회</span>
+    <h2 id="s-gap">지금 상태와 namutok의 대응</h2>
+    <p class="lede">위키 편집 기록 방식으로 적었다. 빨간 줄은 시장의 현재 상태, 초록 줄은 namutok이 바꾸는 부분이다.</p>
+  </div>
+  <div class="diff" role="list">
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 소스 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>해외는 랜덤·추천·AI, 국내 공식 피드는 실검 키워드 10개뿐</span></div>
+      <div class="ln add"><span class="sg">+</span><span>sidebar.json 편집 피드가 메인, 랜덤은 보조 탭 (실검 쇼츠 54만 vs 랜덤 낭독 구독 12)</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 맥락 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>실검챈은 해설만, 뷰어는 본문만, 확장은 PC 크롬 전용</span></div>
+      <div class="ln add"><span class="sg">+</span><span>카드에서 "왜 편집되는지" 1탭 (실검 연동, 실검챈 링크)</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 원문 연결 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>공식앱이 뒤로가기를 없앴고(리뷰 100건 중 48건 언급), 위키 피드는 카드와 원문이 끊긴다</span></div>
+      <div class="ln add"><span class="sg">+</span><span>탭하면 원문, 피드 위치 보존, 원문 클릭률을 설계 지표로</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 이미지 안전 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>사건사고 썸네일 강제 노출 ("혐오감이나 공포심")</span></div>
+      <div class="ln add"><span class="sg">+</span><span>이미지 흐림·끄기 토글, 민감 분류 필터</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 품질 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>요약 10건 중 4건이 "파일:", "분류:", 표 머리글로 시작</span></div>
+      <div class="ln add"><span class="sg">+</span><span>요약 정제, 하위 문서·틀·분류·파일 제외, 반복 노출 제한</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 개인화 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>WikiTok은 거절했고 대부분 없음</span></div>
+      <div class="ln add"><span class="sg">+</span><span>가입 없는 로컬 분류 점수 + 일정 비율 랜덤, 선택형 관심사 칩</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 루틴·공유 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>무한 피드뿐</span></div>
+      <div class="ln add"><span class="sg">+</span><span>"오늘 가장 많이 편집된 10개" 같은 끝이 있는 묶음과 공유 카드 (Wikimedia 공유 카드: 월 약 210만 페이지뷰 유입)</span></div></div>
+    <div class="hunk" role="listitem"><div class="hunk-h">@@ 접근 안정성 @@</div>
+      <div class="ln del"><span class="sg">−</span><span>뷰어 실검 고장, Raycast 명령 셋 중 하나 고장</span></div>
+      <div class="ln add"><span class="sg">+</span><span>소스별 헬스체크, sidebar.json 실패 시 RecentChanges·제목 풀 폴백, 장애 안내 화면</span></div></div>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="s-pos">
+  <div class="sec-head">
+    <span class="eyebrow">포지셔닝과 해자</span>
+    <h2 id="s-pos">새롭지만 막을 수는 없다</h2>
+  </div>
+  <p class="position">지금 한국 인터넷이 고치고 있는 나무위키 문서를, 왜 고치는지와 함께 넘겨 보고, 탭 한 번으로 원문에 갔다 돌아오는 피드.</p>
+  <div class="tbl" tabindex="0" aria-label="차별점별 해자 강도">
+    <table class="mid">
+      <thead><tr><th>차별점</th><th>무엇이 새로운가</th><th>따라 하기</th><th>해자</th></tr></thead>
+      <tbody>
+        <tr><td><b>실시간 편집 신호를 소스로</b></td><td>세계 위키 피드 중 편집 활동을 쓴 제품이 없다</td><td>매우 쉽다. 공개 JSON에 CORS가 열려 있고 robots.txt도 허용한다</td><td><span class="chip p-hi">약</span></td></tr>
+        <tr><td><b>"왜 편집되는지" 맥락</b></td><td>모바일 카드 안 1탭은 처음이다</td><td>쉽다. 단 실검 API가 2026-10 암호화돼 누구에게나 어려워졌다</td><td><span class="chip p-mid">약~중</span></td></tr>
+        <tr><td><b>원문 동선 (위치 보존, 광고 비침해)</b></td><td>공식앱이 버린 뒤로가기를 지킨다</td><td>UX 디테일이라 쉽다</td><td><span class="chip p-mid">기술 약 · 생존 중</span></td></tr>
+        <tr><td><b>카드 품질 정제</b></td><td>메타 요약 문제를 푼 나무위키 카드가 없다</td><td>반복 튜닝이 필요하다</td><td><span class="chip p-mid">약~중</span></td></tr>
+        <tr><td><b>이미지 토글 · 경량 개인화 · 공유 카드</b></td><td>국내 나무위키 제품에 없다</td><td>공개 패턴이라 쉽다</td><td><span class="chip p-hi">약</span></td></tr>
+        <tr><td><b>나무위키 문체·서브컬처</b></td><td>위키백과 기반 해외 클론과 확실히 다르다</td><td>국내 클론은 같은 소스를 쓴다</td><td><span class="chip p-lo">해외 대비 강</span> <span class="chip p-hi">국내 대비 없음</span></td></tr>
+        <tr><td><b>선점 · 지속 운영</b></td><td>2차 앱 대부분이 1~2개월 뒤 방치됐다</td><td>시간이 필요하다</td><td><span class="chip p-mid">중</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>기술 해자는 없다. 남는 것은 실행 속도, 품질 튜닝, 지속 운영이다. 1주짜리 포트폴리오라면 먼저 내고 계속 고치는 전략으로 충분하다.</p>
+</section>
+
+<section class="sec" aria-labelledby="s-ent">
+  <div class="sec-head">
+    <span class="eyebrow">대형·잠재 진입자</span>
+    <h2 id="s-ent">들어올 쪽은 대기업이 아니라 개인 개발자다</h2>
+    <p class="lede">기준: 12개월 안에 "나무위키 문서를 스와이프 카드로, 실시간 편집·랜덤 소스로" 보여 주는 제품을 낼 가능성.</p>
+  </div>
+  <div class="tbl" tabindex="0" aria-label="진입자별 12개월 진입 확률">
+    <table class="mid">
+      <thead><tr><th>진입자</th><th>확률</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td>개인·소규모 개발자</td><td><span class="chip p-hi">상</span></td><td>2026년 나무위키 놀이형 2차 제품이 최소 8개 나왔다. WikiTok급은 2시간이면 만든다. Cloudflare 차단이 진입 비용을 조금 올린다</td></tr>
+        <tr><td>umanle (공식앱)</td><td><span class="chip p-mid">하~중</span></td><td>작은 카드 섹션은 중, 풀스크린 피드는 하. 유일한 피드 서비스 나무뉴스를 2026-06에 닫았고 채용 공고는 0건이다</td></tr>
+        <tr><td>실검챈 운영진·크리에이터</td><td><span class="chip p-mid">중</span></td><td>인접 니치. 해설과 영상은 이미 하고 있지만 앱 피드를 만들 동기는 약하다</td></tr>
+        <tr><td>네이버</td><td><span class="chip p-mid">맥락 흡수 중</span></td><td>지식백과 카드 피드와 "지금 떠오르는 주제"가 이미 있다. 나무위키를 소스로 쓸 가능성은 하</td></tr>
+        <tr><td>Google Discover</td><td><span class="chip p-mid">흡수 중</span></td><td>트렌딩 AI 미리보기를 2025-10-13 한국에 먼저 냈다</td></tr>
+        <tr><td>Wikimedia</td><td><span class="chip p-lo">하</span></td><td>Scrollipedia 실험을 2026-08-26 출시 없이 내렸다. 한국어 위키백과 Home 피드는 중</td></tr>
+        <tr><td>카카오·다음, OpenAI, Perplexity</td><td><span class="chip p-lo">하</span></td><td>피드 실험을 잇달아 접었다 (카톡 친구탭 롤백, 카나나·Pulse·Sora 종료)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <h3>철수·종료 사례</h3>
+      <ul>
+        <li><b>나무뉴스</b> (2026-06-23): 나무위키·아카라이브 진입 탭을 없애자 댓글이 급감했고 3주 뒤 닫았다. 사유 공지는 없다</li>
+        <li><b>Scrollipedia</b> (2026-08-26): Wikimedia 피드 실험, 결과 미공개</li>
+        <li><b>Wikistories</b> (2024-06): 캠페인 의존 공급, 공유 조회 76회</li>
+        <li><b>whydem.com</b>: 실검 해설 웹, "이미 실검챈이 있지 않나" 반응 뒤 DNS 소멸</li>
+        <li><b>QuickQuack</b>: 위키 텍스트 피드에서 교육 영상 피드로 피벗 (2026-06~07)</li>
+        <li><b>나무위키 미러들</b> (2016~2023): reCAPTCHA와 크롤링 차단으로 갱신 중단</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>철수 사례가 말하는 것</h3>
+      <ul>
+        <li>자사 트래픽에 기대던 부가 피드는 노출을 끊는 순간 죽는다</li>
+        <li>캠페인과 신기함으로 만든 수요는 오래가지 않는다</li>
+        <li>대형 플랫폼은 독립 실험 앱을 접고 핵심 앱 안 기능으로 흡수한다</li>
+        <li>namutok도 "실검챈과 뭐가 다르냐"에 답해야 한다</li>
+        <li>콘텐츠를 통째로 복제하거나 광고를 우회한 제품은 기술적으로 막혔다</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="s-mkt">
+  <div class="sec-head">
+    <span class="eyebrow">시장 배경</span>
+    <h2 id="s-mkt">수요는 고원에 있고, 위험은 한 달 사이에 몰렸다</h2>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <h3>나무위키 수요 (2026-10)</h3>
+      <ul>
+        <li>월 방문 <span class="mono">314.5M</span> (<a href="https://www.similarweb.com/website/namu.wiki/">Similarweb</a>) · <span class="mono">309.73M</span> (<a href="https://www.semrush.com/website/namu.wiki/overview/">Semrush</a>)</li>
+        <li>체류 7분 37초~11분 37초, 방문당 3.4~5페이지</li>
+        <li>최대 연령층 18~24세, 남성 76.9%, 한국 내 모바일 60.21%</li>
+        <li>검색 유입은 줄었다: Ahrefs <span class="mono">41M</span>, 2025-07 대비 약 −28% (<a href="https://ahrefstop.com/websites/namu.wiki">Ahrefs</a>)</li>
+        <li>오락용 탐독 비율을 직접 잰 설문은 없다. 긴 체류와 Similarweb의 "소셜미디어" 분류가 정황이다</li>
+      </ul>
+      <p class="small">why now: AI 검색이 "사실 확인" 조회를 가져가면 위키에 남는 가치는 읽는 재미와 꼬리물기다. 세로 스와이프는 이미 전 연령의 습관이다.</p>
+    </div>
+    <div class="panel">
+      <h3>플랫폼 리스크 타임라인</h3>
+      <ol class="tl">
+        <li><span class="d">2025-11-26</span>개인정보위가 운영사 umanle 고발 의결</li>
+        <li><span class="d">2026-04</span>울산경찰청, 파라과이에 형사사법공조 요청</li>
+        <li><span class="d">2026-06-23</span>umanle의 유일한 피드 서비스 나무뉴스 종료</li>
+        <li><span class="d">2026-08-23</span>공식앱 v1.2.0 개편, 평점 1.7까지 하락</li>
+        <li class="hot"><span class="d">2026-10-04</span>실검 API 폐기, 암호화된 응답으로 전환</li>
+        <li class="hot"><span class="d">2026-10-08경</span>Cloudflare 차단 시작, 비공식 뷰어 고장</li>
+        <li class="hot"><span class="d">2026-11-02</span>파라과이 거래 은행 정리 절차, umanle 결제 차질 (<a href="https://m.inews24.com/v/2023259">아이뉴스24</a>)</li>
+      </ol>
+      <p class="small">전면 접속 차단이나 과징금은 없다. 정부 차단보다 운영사의 조용한 접근 정책 변경이 먼저 namutok을 멈출 수 있다.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>플랫폼 접근 조건 (2026-11-18 직접 확인)</h3>
+    <ul>
+      <li><a href="https://namu.wiki/Policy">이용약관</a>(스페인어, 약 7,130자)에 크롤링·스크래핑·복제·상업적 이용 금지 조항이 없다</li>
+      <li><a href="https://namu.wiki/robots.txt">robots.txt</a>는 <span class="mono">/w/</span>, <span class="mono">/sidebar.json</span>, <span class="mono">/RecentChanges</span>를 허용하고 <span class="mono">/random</span>, <span class="mono">/raw/</span>는 허용하지 않는다</li>
+      <li><span class="mono">/sidebar.json</span>은 CORS가 열려 있어 브라우저에서 바로 받는다. 문서 페이지는 CORS가 없어 서버 프록시가 필요하다</li>
+      <li>가정집 IP에서 문서 10건 모두 성공. <b>데이터센터 IP는 미확인</b>이고, 2026-10부터 비공식 뷰어가 Cloudflare 차단을 받고 있다</li>
+      <li>콘텐츠는 CC BY-NC-SA 2.0 KR. 비영리·출처 표시로 쓸 수 있지만 이미지는 개별 라이선스다</li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="s-name">
+  <div class="sec-head">
+    <span class="eyebrow">이름 확인</span>
+    <h2 id="s-name">"namutok"은 비어 있다</h2>
+  </div>
+  <div class="tbl" tabindex="0" aria-label="이름 충돌 확인">
+    <table class="mid">
+      <thead><tr><th>대상</th><th>결과 (2026-11-18)</th></tr></thead>
+      <tbody>
+        <tr><td>도메인</td><td>namutok.com · .net · .app · .io · .kr · .co.kr, 나무톡.com · 나무톡.kr 모두 미등록</td></tr>
+        <tr><td>KIPRIS 상표</td><td>namutok · 나무톡 국내·해외 0건 (대조군 "카카오톡" 68건으로 검색 정상 확인)</td></tr>
+        <tr><td>제품·코드</td><td>동명 앱·GitHub·npm·텔레그램 없음. "나무톡"은 목재 브랜드 블로그 이름으로만 쓰인다</td></tr>
+        <tr><td>남은 확인</td><td>"~톡" 상표가 많은 카카오와의 유사성, umanle의 "나무위키" 브랜드 정책. 법률 자문이 아니다</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">이름이 나무위키를 연상시키므로 서비스 안내에 "비공식, umanle와 무관"을 적는다. WikiTok은 바이럴 다음 날 비슷한 도메인을 선점당했다.</p>
+</section>
+
+<section class="sec" aria-labelledby="s-risk">
+  <div class="sec-head">
+    <span class="eyebrow">반대 의견</span>
+    <h2 id="s-risk">이게 안 될 수 있는 이유</h2>
+  </div>
+  <ul class="risks">
+    <li><b>핵심 소스가 하루아침에 끊길 수 있다.</b> 운영사는 2026-10-04 실검 API를 예고 없이 없앴다. namutok이 뜰수록 요청이 늘고 차단 확률도 오른다. 성공 시나리오와 차단 시나리오가 겹친다.</li>
+    <li><b>헤비 유저의 핵심 습관은 넘기기가 아니라 링크 타기다.</b> 공식앱 리뷰에서 뒤로가기 언급은 48건, 랜덤 언급은 9건이었다. 2026년 2차 제품 붐도 피드가 아니라 레이싱 게임이었다.</li>
+    <li><b>"편집 중 문서"는 사건사고·논란·생존 인물로 쏠린다.</b> 편집 분쟁이나 반달 상태가 카드에 찍힐 수 있다. sidebar.json의 갱신 빈도와 사소한 편집 비중도 아직 모른다.</li>
+    <li><b>포맷의 한국 견인력은 증명된 적이 없다.</b> 해외 위키 피드의 KR 평가는 0건이고, GeekNews에서 "위키 피드"는 4점이었다.</li>
+    <li><b>"원문으로 보내 운영사와 이익을 맞춘다"는 논리가 깨질 수 있다.</b> Wikimedia Home은 피드 몰입이 늘자 원문 클릭률이 6.3% 줄었다. 카드가 재미있을수록 원문 방문이 줄 수 있다.</li>
+    <li><b>차별점은 하루면 복제된다.</b> 개인 클론 진입 확률은 상이고, 공식앱 홈에는 이미 "연관 문서" 카드가 있다.</li>
+  </ul>
+</section>
+
+<section class="sec" aria-labelledby="s-src">
+  <div class="sec-head">
+    <span class="eyebrow">출처</span>
+    <h2 id="s-src">근거 자료</h2>
+    <p class="small">전체 근거와 출처 약 230개는 프로젝트의 <span class="mono">docs/planning/03-competition.md</span>에 있다. 각 사실은 원문 확인과 검색 스니펫으로 구분해 두었다. Similarweb·Semrush·Ahrefs는 방법론이 달라 서로 비교하지 않는다.</p>
+  </div>
+  <ul class="src">
+    <li><a href="https://namu.wiki/Policy">나무위키 이용약관 (Policy)</a></li>
+    <li><a href="https://namu.wiki/robots.txt">나무위키 robots.txt</a></li>
+    <li><a href="https://github.com/OnlyReadOneBook/namu-trending">namu-trending (실검 API 폐기 기록)</a></li>
+    <li><a href="https://play.google.com/store/apps/details?id=net.umanle.namuwiki&amp;hl=ko&amp;gl=KR">나무위키 공식앱 (Google Play)</a></li>
+    <li><a href="https://apps.apple.com/kr/app/id1623510780">나무위키 공식앱 (App Store)</a></li>
+    <li><a href="https://apps.apple.com/kr/app/id993035669">나무뷰어 (App Store)</a></li>
+    <li><a href="https://play.google.com/store/apps/details?id=com.monpub.namuwiki.repack&amp;hl=ko&amp;gl=KR">나무뷰어-리팩 (Google Play)</a></li>
+    <li><a href="https://www.raycast.com/123period/namuwiki">Raycast Namuwiki</a></li>
+    <li><a href="https://namu.wiki/w/%EB%82%98%EB%AC%B4%EC%9C%84%ED%82%A4%20%EC%8B%A4%EA%B2%80%20%EC%95%8C%EB%A0%A4%EC%A3%BC%EB%8A%94%20%EC%B1%84%EB%84%90">나무위키 실검 알려주는 채널 (문서)</a></li>
+    <li><a href="https://chromewebstore.google.com/detail/lkeohnkcjiniaeahjneenijngejohhnb">나무위키 실검, 왜 떴지? (크롬 확장)</a></li>
+    <li><a href="https://github.com/IsaacGemal/wikitok">WikiTok GitHub</a></li>
+    <li><a href="https://www.aizk.sh/posts/reflecting-on-wikitok">Reflecting on WikiTok (창작자 회고)</a></li>
+    <li><a href="https://news.ycombinator.com/item?id=42936723">WikiTok HN 스레드</a></li>
+    <li><a href="https://github.com/rebane2001/xikipedia">Xikipedia GitHub</a></li>
+    <li><a href="https://news.ycombinator.com/item?id=46557029">QuickQuack HN</a></li>
+    <li><a href="https://www.mediawiki.org/wiki/Wikimedia_Apps/Team/Explore_Feed_Refresh/Phase_1">Wikimedia Explore Feed Refresh 결과</a></li>
+    <li><a href="https://meta.wikimedia.org/wiki/Future_Audiences/Share_card">Wikimedia Share card</a></li>
+    <li><a href="https://meta.wikimedia.org/wiki/Future_Audiences/Scrollipedia">Wikimedia Scrollipedia</a></li>
+    <li><a href="https://www.mediawiki.org/wiki/Wikistories_for_Wikipedia">Wikistories</a></li>
+    <li><a href="https://namu.wiki/w/%EB%82%98%EB%AC%B4%EC%9C%84%ED%82%A4%20%EB%AF%B8%EB%9F%AC">나무위키 미러 (문서)</a></li>
+    <li><a href="https://view.asiae.co.kr/article/2026011216243233712">아시아경제: 개인정보위 고발</a></li>
+    <li><a href="https://m.inews24.com/v/2023259">아이뉴스24: umanle 결제 차질</a></li>
+    <li><a href="https://www.similarweb.com/website/namu.wiki/">Similarweb namu.wiki</a></li>
+    <li><a href="https://www.semrush.com/website/namu.wiki/overview/">Semrush namu.wiki</a></li>
+    <li><a href="https://cdn.cjmezzomedia.com/attach-file/insight-m/01_MezzoMedia_2026_Digital_Lifestyle_Report_Shortform_20260528134817.pdf">메조미디어 2026 숏폼 리포트</a></li>
+    <li><a href="https://lagerland.app/apps/wanderwiki/">WanderWiki</a></li>
+  </ul>
+</section>
+
+<footer>
+  <span>namutok 기획 3단계 산출물 · 조사일 2026-11-18</span>
+  <span>앱스토어 지표, GitHub 스타, HN 점수는 조회일 기준이다. Play 설치 수는 추정치라 규모로만 본다.</span>
+</footer>
+
+</main>
