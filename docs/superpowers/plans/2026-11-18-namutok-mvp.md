@@ -1,5 +1,7 @@
 # namutok MVP 구현 계획
 
+> **중단 (Kill, 2026-11-19)**: Task 1·1b의 A10 차단 테스트에서 Cloudflare Workers·Vercel 모두 0/20(403). Task 2~9는 실행하지 않았다. 기록은 `docs/planning/00-overview.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 나무위키에서 지금 편집 중인 문서를 세로 스와이프 카드로 보여 주는 무료 웹앱을 1주 안에 출시한다.
