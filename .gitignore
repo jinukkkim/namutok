@@ -1,0 +1,26 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Node / Vite / Wrangler
+node_modules/
+dist/
+coverage/
+.wrangler/
+.dev.vars
+*.log
+
+# Secrets
+.env
+.env.*
+
+# Tooling scratch
+.superpowers/
+.pr-review/
+qa/
+
+# Experiment prototype embeds Namu Wiki images (not CC-licensed) — keep local only
+**/namutok-prototype.html
