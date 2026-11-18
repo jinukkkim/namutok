@@ -24,3 +24,6 @@ qa/
 
 # Experiment prototype embeds Namu Wiki images (not CC-licensed) — keep local only
 **/namutok-prototype.html
+
+# Vercel CLI link
+.vercel/
